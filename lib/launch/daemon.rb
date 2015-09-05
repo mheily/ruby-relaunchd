@@ -108,7 +108,7 @@ class Launch::Daemon
     end
   end
 
-  def run
+  def setup_signal_handlers
     $SIGNAL_READER, $SIGNAL_WRITER = IO.pipe
    
     $GOT_SIGINT = false
@@ -126,9 +126,12 @@ class Launch::Daemon
       $GOT_SIGCHLD = true
       $SIGNAL_WRITER.write_nonblock('.')
     end
+  end
 
+  def run
+    Process.daemon
+    setup_signal_handlers
     ##FIXME: start_reaper_thread
-
     server = Launch::Control.new(:server)
     @state.load_all_jobs
     @state.setup_activation

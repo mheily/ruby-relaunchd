@@ -33,13 +33,14 @@ task :install do
 
   FileUtils.cp 'bin/launchd.rb', "#{sbindir}/launchd"
   FileUtils.cp 'bin/launchctl.rb', "#{bindir}/launchctl"
+  system "rm -rf #{pkglibdir}/../launchd" if Dir.exist? pkglibdir 
   system "cp -R lib #{pkglibdir}"
 
   [pkgconfigdir, pkgdatadir].each do |dir|
     FileUtils.mkdir_p([dir, "#{dir}/LaunchAgents", "#{dir}/LaunchDaemons"])
   end 
 
-  Dir.glob("man/*").each do |manpage|
+  Dir.glob("man/*.[0-9]").each do |manpage|
     section = manpage.gsub(/.*\./, '')
     system "cat #{manpage} | gzip > #{mandir}/man#{section}/#{File.basename(manpage)}.gz"
   end
@@ -48,6 +49,14 @@ task :install do
   when 'FreeBSD'
     FileUtils.cp 'rc/rc.FreeBSD', '/usr/local/etc/rc.d/launchd'
     File.chmod 0755, '/usr/local/etc/rc.d/launchd'
+  when 'Linux'
+    if File.exist? '/etc/debian_version'
+      FileUtils.cp 'rc/rc.Linux', '/etc/init.d/launchd'
+      File.chmod 0755, '/etc/init.d/launchd'
+      system "ln -sf ../init.d/launchd /etc/rc3.d/S99launchd"
+    else
+      raise 'Unsupported variant of Linux'
+    end
   else
     puts 'WARNING: unknown OS, no init script has been installed'
   end

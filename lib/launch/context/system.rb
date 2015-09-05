@@ -15,16 +15,21 @@
 #
 
 class Launch::Context::System
+  attr_reader :prefix, :control_path, :search_path
 
   def initialize
     config = Launch::Config.instance
-    raise 'TODO'
-    @search_path
-    [
+    @prefix = '/var/run/launchd'
+    @control_path =  "#{@prefix}/control.socket"
+    @search_path = [
       config.pkgdatadir + '/LaunchAgents',
       config.pkgdatadir + '/LaunchDaemons',
       config.pkgconfigdir + '/LaunchAgents',
       config.pkgconfigdir + '/LaunchDaemons',
     ]
+    unless File.exists? @prefix
+      Dir.mkdir @prefix
+      File.chmod 0700, @prefix
+    end
   end
 end

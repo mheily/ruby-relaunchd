@@ -1,0 +1,4 @@
+On FreeBSD:
+
+  sudo pkg install rubygem-plist rubygem-rake
+  sudo rake install

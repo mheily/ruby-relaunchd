@@ -1,0 +1,11 @@
+* when installing, add to ~/.xprofile or /etc/xprofile(?) so that it
+  launches at X11 startup for each user.
+
+* create anacron entries or cron entries at load/unload
+
+* launch anacron at startup for non-root users
+
+* use D-Bus instead of Mach IPC
+
+* extend the plist to allow daemons to be launched inside a jail
+

@@ -1,0 +1,20 @@
+#!/bin/sh
+
+. /etc/rc.subr
+
+name="launchd"
+start_cmd="${name}_start"
+stop_cmd="#{name}_stop"
+
+launchd_start()
+{
+	/usr/local/bin/ruby -I/usr/local/lib/launchd /usr/local/sbin/launchd
+}
+
+launchd_stop()
+{
+	pkill launchd  			# FIXME: use the pidfile
+}
+
+load_rc_config $name
+run_rc_command "$1"

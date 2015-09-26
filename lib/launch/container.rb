@@ -23,17 +23,28 @@
 #   * Solaris zones
 #
 class Launch::Container
-  def self.new(name)
-    case Gem::Platform.local.os
+  def self.new(name, platform = nil)
+    platform ||= Gem::Platform.local.os
+
+    case platform
     when 'linux'
       raise 'TODO - LXC containers'
     when 'freebsd'
-      object = Launch::Container::EzJail.allocate
+      Launch::Container::EzJail.new(name)
+    when 'null'
+      Launch::Container::Null.new(name)
     else
-     raise 'unsupported OS: ' + Gem::Platform.local.os
+     raise 'unsupported OS: ' + platform
     end
-    object.send :initialize, name
-    object
+  end
+end
+
+# A common base class for all container types
+class Launch::Container::Base
+
+  def initialize(name)
+    @name = name
+    @logger = Launch::Log.instance.logger
   end
 
   protected
@@ -44,12 +55,49 @@ class Launch::Container
   end
 end
 
-# Use the ezjail-admin tool to manage FreeBSD jails
-class Launch::Container::EzJail < Launch::Container
+# A "null container" that executes everything in the host OS
+class Launch::Container::Null < Launch::Container::Base
   attr_reader :name
 
   def initialize(name)
-    @name = name
+    super(name)
+  end
+
+  def exists?
+    true
+  end
+
+  def running?
+    true
+  end
+
+  def create
+    self
+  end
+
+  def start
+    self
+  end
+
+  def stop
+    self
+  end
+
+  def destroy
+    nil
+  end
+
+  def spawn(args)
+    Process.spawn(*args, :close_others => false)
+  end
+end
+
+# Use the ezjail-admin tool to manage FreeBSD jails
+class Launch::Container::EzJail < Launch::Container::Base
+  attr_reader :name
+
+  def initialize(name)
+    super(name)
   end
 
   def exists?
@@ -64,18 +112,23 @@ class Launch::Container::EzJail < Launch::Container
   def create
     # XXX-FIXME need to autodetect the next available loopback IP
     cmd = "ezjail-admin create #{name} 'lo1|127.0.1.1'"
+    @logger.debug "creating jail: #{cmd}"
     # XXX-FIXME seems to return non-zero if there are warnings
     system "#{cmd} #{shell_logfile}" # or raise "command failed: #{cmd}"
     raise 'creation failed' unless exists?
   end
 
   def start
-    system "ezjail-admin start #{name} #{shell_logfile}"
+    cmd = "ezjail-admin start #{name} #{shell_logfile}"
+    @logger.debug "starting jail: #{cmd}"
+    system cmd
     raise 'startup action failed' unless running?
+    @logger.debug "jail started; jid=#{jail_id}"
   end
 
   def stop
-    system "ezjail-admin stop #{name} #{shell_logfile}"
+    cmd = "ezjail-admin stop #{name} #{shell_logfile}"
+    @logger.debug "stopping jail: #{cmd}"
     raise 'stop action failed' if running?
   end
 
@@ -84,10 +137,30 @@ class Launch::Container::EzJail < Launch::Container
     system cmd or raise "command failed: #{cmd}"
   end
 
+  def spawn(args)
+    @logger.debug "hello"
+    cmd = ['jexec', jail_id].concat(args)
+    @logger.debug "spawning: #{cmd.inspect}"
+    Process.spawn(*cmd, :close_others => false)
+  end
+
   private
 
   # ezjail sanitizes the name, so we need this name
   def sanitized_name
     @name.gsub(/\./, '_')
+  end
+
+  def jail_id
+    `jls -n`.split(/\n/).each do |line|
+       tok = line.split(/ /)
+       rec = {}
+       tok.each { |t| key, val = t.split(/=/) ; rec[key] = val }
+       @logger.debug rec.inspect
+       if rec['host.hostname'] == @name
+         return rec['jid']
+       end
+    end
+    raise "jail not found"
   end
 end

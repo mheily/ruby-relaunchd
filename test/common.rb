@@ -18,18 +18,24 @@ module Common
   require_relative '../lib/launch'
 
   def launchctl(command)
-    puts "ruby -I#{@libdir} #{@bindir}/launchctl.rb #{command}"
     `ruby -I#{@libdir} #{@bindir}/launchctl.rb #{command}`.chomp
   end
 
-  def setup
+  def start_launchd
     @libdir = __dir__ + '/../lib'
     @bindir = __dir__ + '/../bin'
+    @fixturesdir = __dir__ + '/fixtures'
 
     @pid = Process.fork
     if @pid.nil?
-       #ENV['DEBUG'] = 'yes'
+       ENV['DEBUG'] = 'yes'
        exec "ruby -I#{@libdir} #{@bindir}/launchd.rb"
     end
+  end
+
+  def stop_launchd
+    Process.kill 'SIGTERM', @pid
+    sleep 1 # hope it shuts down, should probably kill -9 in a bit
+    @pid = nil
   end
 end

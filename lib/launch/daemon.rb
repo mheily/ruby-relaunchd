@@ -145,6 +145,7 @@ class Launch::Daemon
     @state.setup_activation
     @state.start_all_jobs
     loop do
+      begin
       @logger.debug 'waiting for connection'
       ready = IO.select([server.socket, $SIGNAL_READER, @state.listen_sockets].flatten)
       @logger.debug "ready=#{ready.inspect}"
@@ -153,6 +154,9 @@ class Launch::Daemon
       handle_launchctl(server) if ready[0].include? server.socket
       sockets = ready[0] & @state.listen_sockets
       handle_sockets(sockets) if sockets.length > 0
+      rescue => e
+        @logger.error "unhandled exception: #{e.message} at #{e.backtrace.join(' ')}"
+      end
     end
   end
 end

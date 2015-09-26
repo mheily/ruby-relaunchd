@@ -25,6 +25,7 @@ class Launch::Job
     @pid = -1
     @status = :uninitialized # can be: uninitialized, configured, running, stopped
     @last_exit_code = 0			# last exit status from waitpid()
+    @container = false
     @logger = Launch::Log.instance.logger
     @sockets = []
     @active_sockets = []
@@ -36,6 +37,7 @@ class Launch::Job
     @logger.debug "loading job: #{obj.inspect}"
     @plist = obj
     @label = @plist['Label']
+    @container = @plist['Container'] if @plist.has_key? 'Container'
     @status = :configured
     self
   end
@@ -99,20 +101,32 @@ class Launch::Job
   end
 
   def start
-    if @plist.has_key?('Packages') and @status == :configured
-       pkgtool = Launch::PackageManager.instance
-       @plist['Packages'].each do |package|
-         pkgtool.install(package) unless pkgtool.installed?(package)
-       end
+    if container?
+raise 'no'
+      raise 'FIXME - NOT SUPPORTED YET' if @plist.has_key?('Packages')
+      ctr = Launch::Container.new label
+    else
+      ctr = Launch::Container::Null.new label
     end
+    ctr.create unless ctr.exists?
+    ctr.start unless ctr.running?
+
+    if @plist.has_key?('Packages') and @status == :configured
+      pkgtool = Launch::PackageManager.instance
+      @plist['Packages'].each do |package|
+        pkgtool.install(package) unless pkgtool.installed?(package)
+      end
+    end
+
     if @plist.has_key?('Sockets') and @status == :configured
       return setup_sockets 
     end
 
     raise 'already started' if @status == :running
  
-    @logger.debug "starting job: #{@label} command=#{plist['ProgramArguments'].inspect}"
-    @pid = Process.spawn(*@plist['ProgramArguments'], :close_others => false)
+    args = plist['ProgramArguments']
+    @logger.debug "starting job: #{@label} command=#{args.inspect}"
+    @pid = ctr.spawn(args)
     @status = :running
     @logger.debug "child PID #{@pid} now running"
     self
@@ -140,5 +154,11 @@ class Launch::Job
     @last_exit_code = status.exitstatus  # FIXME: is nil when SIGTERM 
     @pid = nil
     self
+  end
+
+  private
+
+  def container?
+    @container == true
   end
 end

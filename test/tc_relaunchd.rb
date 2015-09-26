@@ -45,12 +45,14 @@ class RelaunchdTest < Minitest::Unit::TestCase
 
   # Test the ability to specify package dependencies
   def test_Packages
+    skip 'requires root privs' unless Process.euid == 0
     launchctl "load #{@fixturesdir}/com.example.packages.plist"
     assert_match 'com.example.packages', launchctl('list')
   end
 
   # Test the ability to use containers
   def test_Container
+    skip 'requires root privs' unless Process.euid == 0
     launchctl "load #{@fixturesdir}/com.example.container.plist"
     assert_match 'com.example.container', launchctl('list')
   end

@@ -1,0 +1,4 @@
+Known bugs:
+
+* (FreeBSD only) If ezjail-admin is not installed, container management
+  operations will fail.

@@ -15,7 +15,7 @@
 #
 
 class Launch::Context::User
-  attr_reader :prefix, :control_path, :search_path
+  attr_reader :prefix, :control_path, :search_path, :logfile
 
   def initialize
     @prefix = ENV['HOME'] + '/.launchd'
@@ -25,5 +25,6 @@ class Launch::Context::User
       Dir.mkdir @prefix
       File.chmod 0700, @prefix
     end
+    @logfile = "#{@prefix}/launchd.log"
   end
 end

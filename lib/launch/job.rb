@@ -102,7 +102,7 @@ class Launch::Job
     if @plist.has_key?('Packages') and @status == :configured
        pkgtool = Launch::PackageManager.instance
        @plist['Packages'].each do |package|
-         pkgtool.install(package) unless package.installed?(package)
+         pkgtool.install(package) unless pkgtool.installed?(package)
        end
     end
     if @plist.has_key?('Sockets') and @status == :configured

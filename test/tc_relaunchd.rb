@@ -32,7 +32,7 @@ class RelaunchdTest < Minitest::Unit::TestCase
 
     @pid = Process.fork
     if @pid.nil?
-       #ENV['DEBUG'] = 'yes'
+       ENV['DEBUG'] = 'yes'
        exec "ruby -I#{@libdir} #{@bindir}/launchd.rb"
     end
   end
@@ -45,9 +45,13 @@ class RelaunchdTest < Minitest::Unit::TestCase
 
   # Test the ability to specify package dependencies
   def test_Packages
-    skip 'FIXME -- this test is broken'
     launchctl "load #{@fixturesdir}/com.example.packages.plist"
-    puts launchctl('list')
-    assert_match 'packages', launchctl('list')
+    assert_match 'com.example.packages', launchctl('list')
+  end
+
+  # Test the ability to use containers
+  def test_Container
+    launchctl "load #{@fixturesdir}/com.example.container.plist"
+    assert_match 'com.example.container', launchctl('list')
   end
 end

@@ -20,7 +20,7 @@ class Launch
     require_relative 'context/user'
 
     def self.new
-      if Process.uid == 0
+      if Process.euid == 0
         Launch::Context::System.new
       else
         Launch::Context::User.new

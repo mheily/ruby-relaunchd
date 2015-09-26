@@ -22,7 +22,7 @@ class Launch::Log
   attr_accessor :logger
 
   def initialize
-   @logger = Logger.new($stdout)
+   @logger = Logger.new(Launch::Context.new.logfile)
    if ENV['DEBUG']
      @logger.level = Logger::DEBUG
    else

@@ -15,7 +15,7 @@
 #
 
 class Launch::Context::System
-  attr_reader :prefix, :control_path, :search_path
+  attr_reader :prefix, :control_path, :search_path, :logfile
 
   def initialize
     config = Launch::Config.instance
@@ -27,6 +27,7 @@ class Launch::Context::System
       config.pkgconfigdir + '/LaunchAgents',
       config.pkgconfigdir + '/LaunchDaemons',
     ]
+    @logfile = '/var/log/launchd.log'
     unless File.exists? @prefix
       Dir.mkdir @prefix
       File.chmod 0700, @prefix

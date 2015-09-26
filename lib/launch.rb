@@ -23,6 +23,7 @@ class Launch
   require 'yaml'
 
   require_relative 'launch/config'
+  require_relative 'launch/container'
   require_relative 'launch/context'
   require_relative 'launch/control'
   require_relative 'launch/daemon'

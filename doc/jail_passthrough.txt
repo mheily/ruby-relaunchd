@@ -1,0 +1,13 @@
+How are sockets passed through to jails?
+
+Here's the flow of events for a hypothetical webserver:
+1. In the main system, launchd creates the listening socket on port 80
+2. A client connects to port 80.
+3. launchd starts the corresponding jail.
+4. launchd calls fork(2) and allows the child process to inherit 
+   the socket descriptor.
+5. The launchd child process calls jail_attach(2) to put itself into
+   the jail.
+6. The launchd child process calls exec(2) to execute the webserver command.
+7. The webserver process calls accept(2) on the inherited socket descriptor
+   and services the client request.

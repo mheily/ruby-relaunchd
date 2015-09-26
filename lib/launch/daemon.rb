@@ -128,8 +128,16 @@ class Launch::Daemon
     end
   end
 
+  # Redirect the stdio descriptors to the logfile
+  def setup_stdio_redirect
+    $stdin.close
+    $stdout.reopen(@context.logfile, 'w+') 
+    $stderr.reopen(@context.logfile, 'w+') 
+  end
+
   def run
-    Process.daemon
+    Process.daemon(false, true)
+    setup_stdio_redirect
     setup_signal_handlers
     ##FIXME: start_reaper_thread
     server = Launch::Control.new(:server)

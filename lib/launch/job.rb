@@ -102,8 +102,6 @@ class Launch::Job
 
   def start
     if container?
-raise 'no'
-      raise 'FIXME - NOT SUPPORTED YET' if @plist.has_key?('Packages')
       ctr = Launch::Container.new label
     else
       ctr = Launch::Container::Null.new label
@@ -112,7 +110,7 @@ raise 'no'
     ctr.start unless ctr.running?
 
     if @plist.has_key?('Packages') and @status == :configured
-      pkgtool = Launch::PackageManager.instance
+      pkgtool = ctr.package_manager
       @plist['Packages'].each do |package|
         pkgtool.install(package) unless pkgtool.installed?(package)
       end

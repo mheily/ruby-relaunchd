@@ -23,7 +23,7 @@ class PackageManagerTest < Minitest::Unit::TestCase
   include ::Common
 
   def setup
-    @pkg = Launch::PackageManager.instance
+    @pkg = Launch::PackageManager.new
   end
 
   # Test the package name sanitizer
@@ -41,7 +41,6 @@ class PackageManagerTest < Minitest::Unit::TestCase
   end
 
   # Test the ability to install/uninstall packages
-  # FIXME: will not
   def test_install_and_uninstall
     testpkg = 'v7sh' # an obscure FreeBSD package, hopefully not installed
     skip 'TODO - port to linux' unless Gem::Platform.local.os == 'freebsd'
@@ -52,4 +51,24 @@ class PackageManagerTest < Minitest::Unit::TestCase
     @pkg.uninstall testpkg
     refute @pkg.installed? testpkg
   end
+
+  # Test the ability to install/uninstall packages in a container
+  def test_install_and_uninstall_in_container
+    testpkg = 'v7sh' # an obscure FreeBSD package, hopefully not installed
+    skip 'TODO - port to linux' unless Gem::Platform.local.os == 'freebsd'
+    skip 'requires root privs' unless Process.euid == 0
+
+    name = 'launchd.test_pkg_install'
+    c = Launch::Container.new(name)
+    system "ezjail-admin delete -f -w #{name}" if c.exists?
+    c.create
+    c.start
+    pkg = Launch::PackageManager.new(container: name)
+    pkg.install testpkg
+    assert pkg.installed? testpkg
+    pkg.uninstall testpkg
+    refute pkg.installed? testpkg
+    c.destroy
+  end
+
 end

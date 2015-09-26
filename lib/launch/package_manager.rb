@@ -16,10 +16,10 @@
 
 # Interface with the OS to manage package installation
 class Launch::PackageManager
-  include Singleton
 
-  def initialize
+  def initialize(container: nil)
     @logger = Launch::Log.instance.logger
+    @container = container
     case Gem::Platform.local.os
     when 'linux'
       # TODO: detect yum, apt-get, etc.
@@ -35,7 +35,7 @@ class Launch::PackageManager
     validate_pkgname package
     case @pkgtool
     when :freebsd_pkg
-      `pkg query '%n' #{package}`.chomp != ''
+      `pkg #{chroot_opts} query '%n' #{package}`.chomp != ''
     else
       raise 'unsupported pkgtool'
     end
@@ -46,7 +46,9 @@ class Launch::PackageManager
     validate_pkgname package
     case @pkgtool
     when :freebsd_pkg
-      system "pkg install --yes --quiet #{package}" or raise "package install of #{package} failed"
+      cmd = "pkg #{chroot_opts} --yes --quiet install #{package}" or raise "package install of #{package} failed"
+      @logger.debug cmd
+      system "pkg #{chroot_opts} install --yes --quiet #{package}" or raise "package install of #{package} failed"
     else
       raise 'unsupported pkgtool'
     end
@@ -58,7 +60,7 @@ class Launch::PackageManager
     raise 'package not installed' unless installed?(package)
     case @pkgtool
     when :freebsd_pkg
-      system "pkg remove --yes --quiet #{package}" or raise "package remove of #{package} failed"
+      system "pkg #{chroot_opts} remove --yes --quiet #{package}" or raise "package remove of #{package} failed"
     else
       raise 'unsupported pkgtool'
     end
@@ -70,4 +72,12 @@ class Launch::PackageManager
     pkg
   end
 
+  # Options for running pkg(1) in a chroot environment
+  def chroot_opts
+    if @container.nil?
+      ''
+    else
+      "--chroot /usr/jails/#{@container}"
+    end
+  end
 end

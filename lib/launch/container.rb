@@ -90,6 +90,10 @@ class Launch::Container::Null < Launch::Container::Base
   def spawn(args)
     Process.spawn(*args, :close_others => false)
   end
+
+  def package_manager
+    Launch::PackageManager.new
+  end
 end
 
 # Use the ezjail-admin tool to manage FreeBSD jails
@@ -115,6 +119,7 @@ class Launch::Container::EzJail < Launch::Container::Base
     @logger.debug "creating jail: #{cmd}"
     # XXX-FIXME seems to return non-zero if there are warnings
     system "#{cmd} #{shell_logfile}" # or raise "command failed: #{cmd}"
+    system "cp /etc/resolv.conf /usr/jails/#{name}/etc" or raise "cp failed"
     raise 'creation failed' unless exists?
   end
 
@@ -142,6 +147,10 @@ class Launch::Container::EzJail < Launch::Container::Base
     cmd = ['jexec', jail_id].concat(args)
     @logger.debug "spawning: #{cmd.inspect}"
     Process.spawn(*cmd, :close_others => false)
+  end
+
+  def package_manager
+    Launch::PackageManager.new(container: @name)
   end
 
   private

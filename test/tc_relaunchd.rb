@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #
 # Copyright (c) 2015 Mark Heily <mark@heily.com>
 #
@@ -14,22 +15,39 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-module Common
-  require_relative '../lib/launch'
+require "minitest/autorun"
 
-  def launchctl(command)
-    puts "ruby -I#{@libdir} #{@bindir}/launchctl.rb #{command}"
-    `ruby -I#{@libdir} #{@bindir}/launchctl.rb #{command}`.chomp
-  end
+#
+# Tests for functionality in relaunchd that is not present in the 
+# original MacOS implementation of launchd.
+# 
+class RelaunchdTest < Minitest::Unit::TestCase
+  require_relative 'common'
+  include ::Common
 
   def setup
     @libdir = __dir__ + '/../lib'
     @bindir = __dir__ + '/../bin'
+    @fixturesdir = __dir__ + '/fixtures'
 
     @pid = Process.fork
     if @pid.nil?
        #ENV['DEBUG'] = 'yes'
        exec "ruby -I#{@libdir} #{@bindir}/launchd.rb"
     end
+  end
+
+  def teardown
+    Process.kill 'SIGTERM', @pid
+    sleep 1 # hope it shuts down, should probably kill -9 in a bit
+    @pid = nil
+  end
+
+  # Test the ability to specify package dependencies
+  def test_Packages
+    skip 'FIXME -- this test is broken'
+    launchctl "load #{@fixturesdir}/com.example.packages.plist"
+    puts launchctl('list')
+    assert_match 'packages', launchctl('list')
   end
 end

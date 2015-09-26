@@ -28,5 +28,6 @@ class Launch
   require_relative 'launch/daemon'
   require_relative 'launch/job'
   require_relative 'launch/log'
+  require_relative 'launch/package_manager'
   require_relative 'launch/state_table'
 end

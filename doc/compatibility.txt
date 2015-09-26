@@ -1,0 +1,7 @@
+This document describes compatibility issues between relaunchd and
+the originial launchd in MacOS X.
+
+Features not supported in MacOS X launchd:
+ * The ability to specify package dependencies, i.e. packages
+   to be installed on-demand when the service is launched.
+ * The ability to start daemons in a jail/container.

@@ -134,6 +134,7 @@ class Launch::Container::EzJail < Launch::Container::Base
   def stop
     cmd = "ezjail-admin stop #{name} #{shell_logfile}"
     @logger.debug "stopping jail: #{cmd}"
+    system cmd
     raise 'stop action failed' if running?
   end
 

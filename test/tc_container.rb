@@ -85,4 +85,30 @@ class ContainerTest < Minitest::Unit::TestCase
     File.unlink stampfile
     stop_launchd
   end
+
+  # Test a socket-activated command executed in a jail
+  def test_socket_activation
+    skip 'requires root privs' unless Process.euid == 0
+    skip 'TODO - port to linux' unless Gem::Platform.local.os == 'freebsd'
+
+    name = "relaunchd.test"
+    
+    c = Launch::Container.new(name)
+
+    # ensure a clean environment
+    system "ezjail-admin delete -f -w #{name}" if c.exists?
+  
+    start_launchd
+    begin
+      launchctl "load #{@fixturesdir}/com.example.container_with_socket.plist"
+      sleep 3 # give it time to run async..
+      system "cp #{__dir__}/socket_test.rb /usr/jails/#{name}/tmp" or raise "cp failed"
+      assert_match 'hello world', `nc -w 60 localhost 24820`
+    rescue
+      raise
+    ensure
+      stop_launchd
+    end
+  end
+
 end

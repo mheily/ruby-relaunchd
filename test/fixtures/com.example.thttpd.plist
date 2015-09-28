@@ -3,12 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.example.container_with_socket</string>
+    <string>com.example.thttpd</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/env</string>
-        <string>ruby</string>
-        <string>/tmp/socket_test.rb</string>
+        <string>/usr/local/etc/rc.d/thttpd</string>
+        <string>onestart</string>
     </array>
 
     <key>KeepAlive</key>
@@ -20,14 +19,13 @@
 	<true/>
     	<key>PostCreateCommands</key>
     	<array>
-        	<string>cp /tmp/socket_test.rb $chroot/tmp</string>
     	</array>
 	<true/>
     </dict>
 
     <key>Packages</key>
     <array>
-       	<string>ruby</string>
+       	<string>thttpd</string>
     </array>
 
     <key>Sockets</key>
@@ -35,7 +33,7 @@
         <key>Listeners</key>
         <dict>
             <key>SockServiceName</key>
-            <string>24820</string>
+            <string>80</string>
             <key>SockType</key>
             <string>stream</string>
             <key>SockFamily</key>

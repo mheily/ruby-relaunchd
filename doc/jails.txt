@@ -1,0 +1,9 @@
+Notes on using FreeBSD jails:
+
+* Need to install the ports tree via:
+sudo ezjail-admin install -p
+  ^^^ could automatically check that this was done
+  ^^^ also this takes up a lot of space, might be better to use packages
+
+* Need to setup pf.conf to do NAT. This rule should work:
+	nat on vtnet0 from 127.0.0.0/8 to any -> (vtnet0)

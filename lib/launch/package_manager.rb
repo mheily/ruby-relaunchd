@@ -16,10 +16,14 @@
 
 # Interface with the OS to manage package installation
 class Launch::PackageManager
+  require 'tempfile'
+
+  attr_accessor :chroot, :jail_id
 
   def initialize(container: nil)
     @logger = Launch::Log.instance.logger
     @container = container
+    @chroot = nil
     case Gem::Platform.local.os
     when 'linux'
       # TODO: detect yum, apt-get, etc.
@@ -35,7 +39,7 @@ class Launch::PackageManager
     validate_pkgname package
     case @pkgtool
     when :freebsd_pkg
-      `pkg #{chroot_opts} query '%n' #{package}`.chomp != ''
+      `pkg #{jail_opts} query '%n' #{package}`.chomp != ''
     else
       raise 'unsupported pkgtool'
     end
@@ -44,11 +48,18 @@ class Launch::PackageManager
   # Install a [+package+]
   def install(package)
     validate_pkgname package
+    install_log = Tempfile.new('launchd.pkgtool.install')
+    # TODO: ensure this is deleted
     case @pkgtool
     when :freebsd_pkg
-      cmd = "pkg #{chroot_opts} --yes --quiet install #{package}" or raise "package install of #{package} failed"
+      cmd = "pkg #{jail_opts} install --yes #{package}"
       @logger.debug cmd
-      system "pkg #{chroot_opts} install --yes --quiet #{package}" or raise "package install of #{package} failed"
+      success = system "#{cmd} > #{install_log.path} 2>&1"
+      log_output = `cat #{install_log.path}`
+      @logger.debug log_output
+      unless success
+        raise "package install of #{package} failed."
+      end
     else
       raise 'unsupported pkgtool'
     end
@@ -60,7 +71,7 @@ class Launch::PackageManager
     raise 'package not installed' unless installed?(package)
     case @pkgtool
     when :freebsd_pkg
-      system "pkg #{chroot_opts} remove --yes --quiet #{package}" or raise "package remove of #{package} failed"
+      system "pkg #{jail_opts} remove --yes #{package}" or raise "package remove of #{package} failed"
     else
       raise 'unsupported pkgtool'
     end
@@ -72,12 +83,13 @@ class Launch::PackageManager
     pkg
   end
 
-  # Options for running pkg(1) in a chroot environment
-  def chroot_opts
+  # Options for running pkg(1) in a jail environment
+  def jail_opts
     if @container.nil?
       ''
     else
-      "--chroot /usr/jails/#{@container}"
+      "--jail #{@jail_id}"
+      #"--chroot #{@chroot}"
     end
   end
 end

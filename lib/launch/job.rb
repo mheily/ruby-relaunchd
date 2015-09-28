@@ -25,7 +25,11 @@ class Launch::Job
     @pid = -1
     @status = :uninitialized # can be: uninitialized, configured, running, stopped
     @last_exit_code = 0			# last exit status from waitpid()
-    @container = false
+    @container = {
+	'Enable' => false,
+	'PostCreateCommands' => [],
+	'Packages' => [],
+    }
     @logger = Launch::Log.instance.logger
     @sockets = []
     @active_sockets = []
@@ -37,7 +41,13 @@ class Launch::Job
     @logger.debug "loading job: #{obj.inspect}"
     @plist = obj
     @label = @plist['Label']
-    @container = @plist['Container'] if @plist.has_key? 'Container'
+    if @plist.has_key? 'Container'
+       @container = @plist['Container']
+
+       # KLUDGE - This allows easy access from ::Container but causes some
+       # duplication and potential confusion
+       @container['Packages'] = @plist['Packages'] if @plist.has_key? 'Packages'
+    end
     @status = :configured
     self
   end
@@ -102,19 +112,11 @@ class Launch::Job
 
   def start
     if container?
-      ctr = Launch::Container.new label
+      ctr = Launch::Container.new label, @container
     else
-      ctr = Launch::Container::Null.new label
+      ctr = Launch::Container::Null.new label, @container
     end
     ctr.create unless ctr.exists?
-    ctr.start unless ctr.running?
-
-    if @plist.has_key?('Packages') and @status == :configured
-      pkgtool = ctr.package_manager
-      @plist['Packages'].each do |package|
-        pkgtool.install(package) unless pkgtool.installed?(package)
-      end
-    end
 
     if @plist.has_key?('Sockets') and @status == :configured
       return setup_sockets 
@@ -157,6 +159,6 @@ class Launch::Job
   private
 
   def container?
-    @container == true
+    @container['Enable'] == true
   end
 end

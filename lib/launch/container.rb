@@ -23,16 +23,16 @@
 #   * Solaris zones
 #
 class Launch::Container
-  def self.new(name, platform = nil)
-    platform ||= Gem::Platform.local.os
+  def self.new(name, plist)
+    platform = Gem::Platform.local.os
 
     case platform
     when 'linux'
       raise 'TODO - LXC containers'
     when 'freebsd'
-      Launch::Container::EzJail.new(name)
+      Launch::Container::EzJail.new(name, plist)
     when 'null'
-      Launch::Container::Null.new(name)
+      Launch::Container::Null.new(name, plist)
     else
      raise 'unsupported OS: ' + platform
     end
@@ -41,10 +41,12 @@ end
 
 # A common base class for all container types
 class Launch::Container::Base
+  attr_reader :name, :chroot
 
-  def initialize(name)
+  def initialize(name, plist)
     @name = name
     @logger = Launch::Log.instance.logger
+    @plist = plist
   end
 
   protected
@@ -57,10 +59,10 @@ end
 
 # A "null container" that executes everything in the host OS
 class Launch::Container::Null < Launch::Container::Base
-  attr_reader :name
 
-  def initialize(name)
-    super(name)
+  def initialize(name, plist)
+    super(name, plist)
+    @chroot = '/'
   end
 
   def exists?
@@ -98,14 +100,15 @@ end
 
 # Use the ezjail-admin tool to manage FreeBSD jails
 class Launch::Container::EzJail < Launch::Container::Base
-  attr_reader :name
 
-  def initialize(name)
-    super(name)
+  def initialize(name, plist)
+    super(name, plist)
+    @chroot = "/usr/jails/#{name}"
+    @pkgtool = Launch::PackageManager.new(container: @name)
   end
 
   def exists?
-    File.exist? "/usr/jails/#{name}"
+    File.exist? chroot
   end
 
   def running?
@@ -119,8 +122,28 @@ class Launch::Container::EzJail < Launch::Container::Base
     @logger.debug "creating jail: #{cmd}"
     # XXX-FIXME seems to return non-zero if there are warnings
     system "#{cmd} #{shell_logfile}" # or raise "command failed: #{cmd}"
-    system "cp /etc/resolv.conf /usr/jails/#{name}/etc" or raise "cp failed"
     raise 'creation failed' unless exists?
+
+    start
+
+    system "cp /etc/resolv.conf /usr/jails/#{name}/etc" or raise "cp failed"
+
+    # Install required packages
+    if @plist.has_key?('Packages')
+      @pkgtool.chroot = chroot
+      @pkgtool.jail_id = jail_id
+      @plist['Packages'].each do |package|
+        @pkgtool.install(package) unless @pkgtool.installed?(package)
+      end
+    end
+
+    # Run the post-create commands
+    @plist['PostCreateCommands'].each do |cmd|
+      cmd.gsub!('$chroot', chroot)
+      @logger.debug "running post-create command: #{cmd}"
+      system cmd
+      # TODO: log and warn on a non-zero exit status
+    end
   end
 
   def start
@@ -151,7 +174,7 @@ class Launch::Container::EzJail < Launch::Container::Base
   end
 
   def package_manager
-    Launch::PackageManager.new(container: @name)
+    @pkgtool
   end
 
   private
@@ -161,12 +184,13 @@ class Launch::Container::EzJail < Launch::Container::Base
     @name.gsub(/\./, '_')
   end
 
+  # The numeric jail ID of the jail
   def jail_id
     `jls -n`.split(/\n/).each do |line|
        tok = line.split(/ /)
        rec = {}
        tok.each { |t| key, val = t.split(/=/) ; rec[key] = val }
-       @logger.debug rec.inspect
+       #@logger.debug rec.inspect
        if rec['host.hostname'] == @name
          return rec['jid']
        end

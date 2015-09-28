@@ -93,7 +93,10 @@ class ContainerTest < Minitest::Unit::TestCase
 
     name = "relaunchd.test"
     
-    c = Launch::Container.new(name)
+    c = Launch::Container.new(name, { 
+	'Enable' => true, 
+	'PostCreateCommands' => [], 
+	})
 
     # ensure a clean environment
     system "ezjail-admin delete -f -w #{name}" if c.exists?
@@ -102,12 +105,40 @@ class ContainerTest < Minitest::Unit::TestCase
     begin
       launchctl "load #{@fixturesdir}/com.example.container_with_socket.plist"
       sleep 3 # give it time to run async..
-      system "cp #{__dir__}/socket_test.rb /usr/jails/#{name}/tmp" or raise "cp failed"
       assert_match 'hello world', `nc -w 60 localhost 24820`
     rescue
       raise
     ensure
       stop_launchd
+      system "ezjail-admin delete -f -w #{name} >/dev/null 2>&1"
+    end
+  end
+
+  # Test the thttpd webserver in a container
+  def test_thttpd
+    skip 'requires root privs' unless Process.euid == 0
+    skip 'TODO - port to linux' unless Gem::Platform.local.os == 'freebsd'
+
+    name = "com.example.thttpd"
+    
+    c = Launch::Container.new(name, { 
+	'Enable' => true, 
+	'PostCreateCommands' => [], 
+	})
+
+    # ensure a clean environment
+    system "ezjail-admin delete -f -w #{name}" if c.exists?
+  
+    start_launchd
+    begin
+      launchctl "load #{@fixturesdir}/com.example.thttpd.plist"
+      sleep 3 # give it time to run async..
+      assert_match 'hello world', `curl --silent http://localhost/`
+    rescue
+      raise
+    ensure
+      stop_launchd
+      system "ezjail-admin delete -f -w #{name} >/dev/null 2>&1"
     end
   end
 

@@ -1,13 +1,13 @@
 Why does this project exist?
 ============================
 
-The idea behind the "relaunchd" project is to provide an implementation
-of launchd(8) that is portable to as many operating systems as possible. It
-is also a proving ground for new ideas in process and service management
-that are not currently found in launchd. It is designed to cooperate with
-the existing init(1) systems rather than replace PID 1. Where possible,
-it will leverage existing open-source components instead of reinventing
-the wheel.
+The idea behind the "relaunchd" project is to provide an implementation 
+of launchd(8) that is portable to as many operating systems as possible. 
+It is also a proving ground for new ideas in process and service 
+management that are not currently found in launchd. It is designed to 
+cooperate with the existing init(1) systems rather than replace PID 1. 
+Where possible, it will leverage existing open-source components instead 
+of reinventing the wheel.
 
 Here are the reasons:
 * Many popular Unix and Unix-like systems are shipping with advanced
@@ -23,8 +23,9 @@ of launchd(8) while at the same time adding features that are attractive to
 open-source Unix-like operating systems. Some of the intended new features
 are:
 
-  * The ability to run services in containers (FreeBSD jails or Linux LXC containers). This makes relaunchd somewhat similar to Docker, in that it will have
-  the information necessary to build a container.
+  * The ability to run services in containers (FreeBSD jails or Linux LXC containers). This 
+    makes relaunchd somewhat similar to Docker, in that it will have the information 
+    necessary to build a container.
 
   * The ability to run services in a coordinated fashion across a cluster of
     machines. This feature would be similar to AWS autoscaling [2] but instead
@@ -91,12 +92,12 @@ The main drawbacks of their approach are:
  * The code replaces PID 1 and takes over the boot process, which makes it 
    impossible to coexist with a legacy init system.
 
-By providing an implementation of launchd that works "right now" on 
-operating systems that people are already using, the relaunchd project 
-should increase overall interest in launchd among the open source communities.
-If we could get relaunchd added to the ports trees of the BSDs, and made 
-available to Linux users via their preferred package format (RPM, DEB, PPA, etc.), we would be one step closer to having a universal init system that ISVs
-could target.
+By providing an implementation of launchd that works "right now" on operating 
+systems that people are already using, the relaunchd project should increase 
+overall interest in launchd among the open source communities. If we could get 
+relaunchd added to the ports trees of the BSDs, and made available to Linux users 
+via their preferred package format (RPM, DEB, PPA, etc.), we would be one step 
+closer to having a universal init system that ISVs could target.
 
 References
 ==========

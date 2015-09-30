@@ -1,0 +1,108 @@
+Why does this project exist?
+============================
+
+The idea behind the "relaunchd" project is to provide an implementation
+of launchd(8) that is portable to as many operating systems as possible. It
+is also a proving ground for new ideas in process and service management
+that are not currently found in launchd. It is designed to cooperate with
+the existing init(1) systems rather than replace PID 1. Where possible,
+it will leverage existing open-source components instead of reinventing
+the wheel.
+
+Here are the reasons:
+* Many popular Unix and Unix-like systems are shipping with advanced
+  init systems that provide features not available in the classic SysV-style
+  mechanisms.
+* Apple got a lot of things right with launchd, but the implementation
+  is strongly tied to their platform. It would be difficult to port the
+  open-source Apple code to other operating systems "as is".
+* systemd is not portable and never will be [1].
+
+The intent is provide a strict superset of the advertised features 
+of launchd(8) while at the same time adding features that are attractive to
+open-source Unix-like operating systems. Some of the intended new features
+are:
+
+  * The ability to run services in containers (FreeBSD jails or Linux LXC containers). This makes relaunchd somewhat similar to Docker, in that it will have
+  the information necessary to build a container.
+
+  * The ability to run services in a coordinated fashion across a cluster of
+    machines. This feature would be similar to AWS autoscaling [2] but instead
+    of creating new VMs, it would create/destroy containers within a cluster
+    of virtual or physical machines. The idea is that you could specify
+    things like "always make sure there are two webserver containers running"
+    or "launch up to ten application server containers depending on the
+    combined load average across all containers" or "make sure there is one
+    and only one instance of this container".
+
+  * Support for D-Bus system activation, similar to how launchd currently
+    supports Mach IPC [3]
+
+  * Support for JSON and YAML in addition to the XML launchd.plist format
+
+  * Integrate with existing Unix tools, rather than reimplement them. 
+    For example, on most systems, relaunchd will make automated changes 
+    to /etc/crontab when asked to create a scheduled task.
+
+    Existing tools that relaunchd could rely on include:
+       * cron - for scheduled tasks
+       * inetd - for small, infrequently used network programs
+       * anacron - for periodic tasks that run even when the machine does not run 24x7
+       * D-Bus - for IPC
+       * systemd - for Linux systems that no longer use traditional Unix daemons
+       * daemontools (?) - to supervise and restart daemons as needed
+
+What relaunchd will not be
+==========================
+
+Relaunchd will try not to do the following things:
+ * Take over PID 1 or assume any of the duties of the initial boot process. 
+ * Replace the entire existing init system of an operating system
+ * Be a systemd clone, or try to implement systemd APIs.
+ * Reimplement the functionality of existing Unix daemons like cron and inetd.
+
+Implementation details
+======================
+
+The initial implementation of relaunchd is in Ruby, to allow for rapid
+development and easy refactoring. Once the feature set has stabilized,
+and the overall program structure has been fleshed out, the entire program
+will be rewritten in another language that is more suitable for OOP systems
+programming (like Go or C++). It is unlikely that the program will be rewritten
+in plain C, due to the limited OOP features of the language.
+
+Relationship to NextBSD
+=======================
+
+The NextBSD project has ported the reference implementation of launchd 
+to FreeBSD, using the latest source code from Apple. It relies on
+the existence of Mach IPC
+
+The benefits of their approach are:
+
+ * the Apple implementation is production quality code that has been
+   extensively tested in the real world.
+
+The main drawbacks of their approach are:
+
+ * Mach IPC is required, which most other Unix-like operating systems are
+   unlikely to want to implement in this day and age.
+
+ * The code replaces PID 1 and takes over the boot process, which makes it 
+   impossible to coexist with a legacy init system.
+
+By providing an implementation of launchd that works "right now" on 
+operating systems that people are already using, the relaunchd project 
+should increase overall interest in launchd among the open source communities.
+If we could get relaunchd added to the ports trees of the BSDs, and made 
+available to Linux users via their preferred package format (RPM, DEB, PPA, etc.), we would be one step closer to having a universal init system that ISVs
+could target.
+
+References
+==========
+
+[1] http://www.freedesktop.org/wiki/Software/systemd/InterfacePortabilityAndStabilityChart/
+
+[2] https://aws.amazon.com/autoscaling/
+
+[3] http://dbus.freedesktop.org/doc/system-activation.txt

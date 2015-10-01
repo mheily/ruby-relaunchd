@@ -119,7 +119,11 @@ class Launch::Job
     ctr.create unless ctr.exists?
 
     if @plist.has_key?('Sockets') and @status == :configured
-      return setup_sockets 
+      if container?
+        @logger.error 'FIXME - setup proxying here'
+      else
+        return setup_sockets 
+      end
     end
 
     raise 'already started' if @status == :running

@@ -34,12 +34,28 @@ class Launch::PackageManager
     end
   end
 
+  # Perform one-time setup of the package tool.
+  # This should only be called in a container, and runs when the
+  # container is created.
+  def setup
+    if @container.nil?
+      @logger.warning 'this method should not be called'
+      return
+    end
+
+    case @pkgtool
+    when :freebsd_pkg
+      success = shell_exec "jexec #{@jail_id} sh -c 'ASSUME_ALWAYS_YES=yes pkg -v'"
+      raise "setup of pkg(1) failed" unless success
+    end
+  end
+
   # Return true if [+package+] is installed.
   def installed?(package)
     validate_pkgname package
     case @pkgtool
     when :freebsd_pkg
-      `pkg #{jail_opts} query '%n' #{package}`.chomp != ''
+      `#{pkg} query '%n' #{package}`.chomp != ''
     else
       raise 'unsupported pkgtool'
     end
@@ -48,16 +64,11 @@ class Launch::PackageManager
   # Install a [+package+]
   def install(package)
     validate_pkgname package
-    install_log = Tempfile.new('launchd.pkgtool.install')
     # TODO: ensure this is deleted
     case @pkgtool
     when :freebsd_pkg
-      cmd = "pkg #{jail_opts} install --yes #{package}"
-      @logger.debug cmd
-      success = system "#{cmd} > #{install_log.path} 2>&1"
-      log_output = `cat #{install_log.path}`
-      @logger.debug log_output
-      unless success
+      cmd = "#{pkg} install --yes #{package}"
+      unless shell_exec cmd
         raise "package install of #{package} failed."
       end
     else
@@ -71,25 +82,39 @@ class Launch::PackageManager
     raise 'package not installed' unless installed?(package)
     case @pkgtool
     when :freebsd_pkg
-      system "pkg #{jail_opts} remove --yes #{package}" or raise "package remove of #{package} failed"
+      system "#{pkg} remove --yes #{package}" or raise "package remove of #{package} failed"
     else
       raise 'unsupported pkgtool'
     end
   end
+
   private
+
+  # Run a command and capture output in the log
+  def shell_exec(command)
+    cmd_log = Tempfile.new('launchd.pkgtool')
+    @logger.debug "running: #{command}"
+    begin
+      success = system "#{command} > #{cmd_log.path} 2>&1"
+    ensure
+      log_output = `cat #{cmd_log.path}`
+      @logger.debug "log output:\n" + log_output
+      cmd_log.unlink
+    end
+    success
+  end
 
   def validate_pkgname(pkg)
     raise 'invalid package name' unless pkg =~ /\A[A-Za-z0-9_.-]+\z/
     pkg
   end
 
-  # Options for running pkg(1) in a jail environment
-  def jail_opts
+  # Shell invocation of pkg(1) with support for jails
+  def pkg
     if @container.nil?
-      ''
+      'pkg'
     else
-      "--jail #{@jail_id}"
-      #"--chroot #{@chroot}"
+      "jexec #{@jail_id} pkg"
     end
   end
 end

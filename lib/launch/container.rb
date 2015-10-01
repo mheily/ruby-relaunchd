@@ -129,9 +129,10 @@ class Launch::Container::EzJail < Launch::Container::Base
     system "cp /etc/resolv.conf /usr/jails/#{name}/etc" or raise "cp failed"
 
     # Install required packages
+    @pkgtool.chroot = chroot
+    @pkgtool.jail_id = jail_id
+    @pkgtool.setup
     if @plist.has_key?('Packages')
-      @pkgtool.chroot = chroot
-      @pkgtool.jail_id = jail_id
       @plist['Packages'].each do |package|
         @pkgtool.install(package) unless @pkgtool.installed?(package)
       end

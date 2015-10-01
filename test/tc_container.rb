@@ -80,7 +80,7 @@ class ContainerTest < Minitest::Unit::TestCase
   
     start_launchd
     launchctl "load #{@fixturesdir}/com.example.container.plist"
-    sleep 3 # give it time to run async..
+    sleep 3
     assert File.exist? stampfile 
     File.unlink stampfile
     stop_launchd
@@ -110,7 +110,7 @@ class ContainerTest < Minitest::Unit::TestCase
       raise
     ensure
       stop_launchd
-      system "ezjail-admin delete -f -w #{name} >/dev/null 2>&1"
+      delete_container name
     end
   end
 
@@ -132,12 +132,31 @@ class ContainerTest < Minitest::Unit::TestCase
     start_launchd
     begin
       launchctl "load #{@fixturesdir}/com.example.thttpd.plist"
-      sleep 3 # give it time to run async..
+      count = 0
+      sleep 3 # KLUDGE: allow jail to be created
+      loop do
+        if system "jexec com_example_thttpd pgrep thttpd"
+          break
+        else
+	  sleep 1
+	  count += 1
+	  raise 'timeout' if count > 60
+        end
+      end
       assert_match 'hello world', `curl --silent http://localhost/`
     rescue
       raise
     ensure
       stop_launchd
+      delete_container name
+    end
+  end
+
+  private
+
+  # Delete a jail
+  def delete_container(name)
+    unless ENV['CLEANUP'] == 'no'
       system "ezjail-admin delete -f -w #{name} >/dev/null 2>&1"
     end
   end

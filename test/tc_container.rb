@@ -143,7 +143,10 @@ class ContainerTest < Minitest::Unit::TestCase
 	  raise 'timeout' if count > 60
         end
       end
-      assert_match 'hello world', `curl --silent http://localhost/`
+      hostname = `hostname`.chomp
+      public_ip_addr = `getent hosts #{hostname} | cut -f1 -d' '`.chomp
+      assert_match 'thttpd', `curl --silent http://#{public_ip_addr}/`
+      assert_match 'thttpd', `curl --silent http://localhost/`
     rescue
       raise
     ensure

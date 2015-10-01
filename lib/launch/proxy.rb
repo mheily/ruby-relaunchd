@@ -14,22 +14,22 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-# Things shared by launchd and launchctl
 class Launch
-  require 'pp'
-  require 'plist'
-  require 'singleton'
-  require 'socket'
-  require 'yaml'
+  class Proxy
+    require_relative 'proxy/bsdproxy'
 
-  require_relative 'launch/config'
-  require_relative 'launch/container'
-  require_relative 'launch/context'
-  require_relative 'launch/control'
-  require_relative 'launch/daemon'
-  require_relative 'launch/job'
-  require_relative 'launch/log'
-  require_relative 'launch/package_manager'
-  require_relative 'launch/proxy'
-  require_relative 'launch/state_table'
+    def self.new(socktype: nil, ip_addr: nil, port: nil)
+      case socktype
+      when :STREAM
+        case Gem::Platform.local.os
+    	when 'freebsd'
+      	  return Launch::Proxy::Bsdproxy.new(ip_addr, port)
+    	else
+     	  raise 'unsupported OS: ' + Gem::Platform.local.os
+    	end
+      else
+        raise 'unsupported protocol'
+      end
+    end
+  end
 end

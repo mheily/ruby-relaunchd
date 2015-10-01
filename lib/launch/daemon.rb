@@ -40,6 +40,10 @@ class Launch::Daemon
       loop do
         begin
           pid = Process.waitpid -1, Process::WNOHANG
+          if pid.nil?
+            @logger.debug "spurious wakeup?"
+            next
+          end
           @logger.debug "pid #{pid} died with status #{$?.inspect}"
           @state.reap($?.dup)
         rescue Errno::ECHILD

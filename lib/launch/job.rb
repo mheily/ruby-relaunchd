@@ -65,6 +65,17 @@ class Launch::Job
     self
   end
 
+  # Start proxying requests from the main host to a container
+  def setup_proxy(socktype, family, port)
+    raise 'FIXME - only IPv4 supported' unless family == :INET
+    raise 'FIXME - only TCP supported' unless socktype == :STREAM
+    @proxy = Launch::Proxy.new(socktype: socktype, 
+    		ip_addr: '127.0.1.1', # XXX-FIXME Hardcoded
+    		port: port)
+    @proxy.start
+    self
+  end
+
   def setup_sockets
     # TODO: handle an array of sockets
     ent = @plist['Sockets']['Listeners']
@@ -90,6 +101,9 @@ class Launch::Job
     else
       raise ArgumentError, 'invalid SockType'
     end
+
+    return setup_proxy(socktype, family, port) if container?
+
     socket = Socket.new(family, socktype, 0)
     socket.close_on_exec = false
     socket.setsockopt(:SOCKET, :REUSEADDR, true)
@@ -119,11 +133,8 @@ class Launch::Job
     ctr.create unless ctr.exists?
 
     if @plist.has_key?('Sockets') and @status == :configured
-      if container?
-        @logger.error 'FIXME - setup proxying here'
-      else
-        return setup_sockets 
-      end
+      setup_sockets 
+      return unless container?
     end
 
     raise 'already started' if @status == :running

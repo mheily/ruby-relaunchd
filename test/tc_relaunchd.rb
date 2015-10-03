@@ -26,21 +26,11 @@ class RelaunchdTest < Minitest::Unit::TestCase
   include ::Common
 
   def setup
-    @libdir = __dir__ + '/../lib'
-    @bindir = __dir__ + '/../bin'
-    @fixturesdir = __dir__ + '/fixtures'
-
-    @pid = Process.fork
-    if @pid.nil?
-       ENV['DEBUG'] = 'yes'
-       exec "ruby -I#{@libdir} #{@bindir}/launchd.rb"
-    end
+    start_launchd
   end
 
   def teardown
-    Process.kill 'SIGTERM', @pid
-    sleep 1 # hope it shuts down, should probably kill -9 in a bit
-    @pid = nil
+    stop_launchd
   end
 
   # Test the ability to specify package dependencies

@@ -29,7 +29,7 @@ module Common
     @pid = Process.fork
     if @pid.nil?
        ENV['DEBUG'] = 'yes'
-       exec "ruby -I#{@libdir} #{@bindir}/launchd.rb"
+       exec "ruby -I#{@libdir} #{@bindir}/launchd.rb -f"
     end
   end
 

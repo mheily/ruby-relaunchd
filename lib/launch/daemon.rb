@@ -15,12 +15,14 @@
 #
 
 class Launch::Daemon
+  attr_accessor :daemonize
 
   def initialize
     @logger = Launch::Log.instance.logger
     @context = Launch::Context.new
     # TODO: create pidfile
     @state = Launch::StateTable.new
+    @daemonize = true
   end
 
   def handle_signals
@@ -140,8 +142,10 @@ class Launch::Daemon
   end
 
   def run
-    Process.daemon(false, true)
-    setup_stdio_redirect
+    if @daemonize
+      Process.daemon(false, true)
+      setup_stdio_redirect
+    end
     setup_signal_handlers
     ##FIXME: start_reaper_thread
     server = Launch::Control.new(:server)
@@ -160,6 +164,7 @@ class Launch::Daemon
       handle_sockets(sockets) if sockets.length > 0
       rescue => e
         @logger.error "unhandled exception: #{e.message} at #{e.backtrace.join(' ')}"
+        exit(1)
       end
     end
   end

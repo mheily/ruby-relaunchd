@@ -17,6 +17,17 @@
 
 $LOAD_PATH.unshift "/usr/local/lib/launchd" if $0 == '/usr/local/sbin/launchd'
 
+require 'optparse'
 require 'launch'
 
-Launch::Daemon.new.run
+launchd = Launch::Daemon.new
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: launchd [options]"
+
+  opts.on("-f", "--foreground", "Do not daemonize; run in the foreground") do
+    launchd.daemonize = false
+  end
+end.parse!
+
+launchd.run

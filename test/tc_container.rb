@@ -22,17 +22,24 @@ class ContainerTest < Minitest::Unit::TestCase
   require_relative 'common'
   include ::Common
 
+  # A fake plist to allow the Container object to be created
+  def fake_plist
+   { 'Enable' => true, 
+     'PostCreateCommands' => [],  
+   }
+  end
+
   # Test the #create method
   def test_create
     skip 'requires root privs' unless Process.euid == 0
-    assert Launch::Container.new('test')
+    assert Launch::Container.new('test', fake_plist)
   end
 
   # Test if a container exists
   def test_exists?
     skip 'requires root privs' unless Process.euid == 0
 
-    c = Launch::Container.new('a-container-that-does-not-exist')
+    c = Launch::Container.new('a-container-that-does-not-exist', fake_plist)
     refute c.exists?
 
     skip 'need to figure out a way to spawn a test container'
@@ -47,7 +54,7 @@ class ContainerTest < Minitest::Unit::TestCase
 
     name = "relaunchd.test"
     
-    c = Launch::Container.new(name)
+    c = Launch::Container.new(name, fake_plist)
 
     # ensure a clean environment
     system "ezjail-admin delete -f -w #{name}" if c.exists?
@@ -72,7 +79,7 @@ class ContainerTest < Minitest::Unit::TestCase
     name = "relaunchd.test"
     stampfile = '/usr/jails/com.example.container/tmp/launchd-job-stamp'
     
-    c = Launch::Container.new(name)
+    c = Launch::Container.new(name, fake_plist)
 
     # ensure a clean environment
     system "ezjail-admin delete -f -w #{name}" if c.exists?

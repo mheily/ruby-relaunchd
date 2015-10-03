@@ -47,6 +47,8 @@ class Launch::Container::Base
     @name = name
     @logger = Launch::Log.instance.logger
     @plist = plist
+    # Sanity check the plist
+    @plist['PostCreateCommands'] ||= []
   end
 
   protected

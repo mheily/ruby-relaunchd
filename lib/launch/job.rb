@@ -47,6 +47,12 @@ class Launch::Job
        # KLUDGE - This allows easy access from ::Container but causes some
        # duplication and potential confusion
        @container['Packages'] = @plist['Packages'] if @plist.has_key? 'Packages'
+    else
+      @container = {
+	'Enable' => false,
+	'PostCreateCommands' => [],
+	'Packages' => [],
+      }
     end
     @status = :configured
     self

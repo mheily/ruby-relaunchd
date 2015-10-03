@@ -15,7 +15,10 @@
     <false/>
 
     <key>Container</key>
-    <true/>
+    <dict>
+    	<key>Enable</key>
+    	<true/>
+    </dict>
 
 </dict>
 </plist>

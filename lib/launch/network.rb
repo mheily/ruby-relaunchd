@@ -14,24 +14,18 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-# Things shared by launchd and launchctl
-class Launch
-  require 'pp'
-  require 'plist'
-  require 'singleton'
-  require 'socket'
-  require 'yaml'
+# Information about the network
+class Launch::Network
 
-  require_relative 'launch/config'
-  require_relative 'launch/container'
-  require_relative 'launch/context'
-  require_relative 'launch/control'
-  require_relative 'launch/daemon'
-  require_relative 'launch/firewall'
-  require_relative 'launch/job'
-  require_relative 'launch/log'
-  require_relative 'launch/network'
-  require_relative 'launch/package_manager'
-  require_relative 'launch/proxy'
-  require_relative 'launch/state_table'
+  # The name of the interface associated with the default route
+  # TODO: move to a Network class and port to Linux
+  def self.default_interface
+    `netstat -rn | egrep ^default | awk '{print $4}' | head -1`.chomp
+  end
+
+  # The IPv4 address of an interface
+  # TODO: move to a Network class and port to Linux
+  def self.ip_address(interface)
+    `ifconfig #{interface} | egrep 'inet (.*) ' | awk '{print $2}'`.chomp
+  end
 end

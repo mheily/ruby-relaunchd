@@ -1,5 +1,10 @@
 On FreeBSD:
 
-  sudo pkg install rubygem-plist rubygem-rake bsdproxy
+  sudo pkg install rubygem-plist rubygem-rake
   sudo rake install
+
+  edit /etc/pf.conf and add two anchors in the appropriate sections:
+
+    nat-anchor launchd.nat
+    rdr-anchor launchd.rdr
 

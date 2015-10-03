@@ -41,6 +41,7 @@ class Launch::Firewall::Pf < Launch::Firewall::Base
 
   def disable_redirect(socktype, ip_addr, port)
     @rdr_rule.delete [socktype, ip_addr, port]
+    reload_ruleset
   end
 
   private
@@ -68,7 +69,9 @@ class Launch::Firewall::Pf < Launch::Firewall::Base
   end
 
   def reload_ruleset
-    #puts @nat_rule.inspect
-    #puts @nat_rule.inspect
+    outfile = "/var/run/launchd/pf.conf"
+    File.open(outfile, "w") { |f| f.write(ruleset) }
+    system "pfctl -q -N -a launchd.nat -f #{outfile}" or raise "pfctl-1 failed"
+    system "pfctl -q -a launchd.rdr -f #{outfile}" or raise "pfctl-2 failed"
   end
 end

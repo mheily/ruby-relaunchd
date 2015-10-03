@@ -28,36 +28,37 @@ class FirewallTest < Minitest::Unit::TestCase
     @public_iface = Launch::Network::default_interface
   end
 
+  # Check the proposed ruleset
   def check_ruleset(fw, match)
     buf = fw.send(:ruleset)
     assert_equal match, buf
   end
 
+  # Check the the running ruleset in the kernel
+  def check_running(match)
+    assert_match match, `pfctl -s all`
+  end
+
   # Create a NAT rule for an IP address
-  def test_enable_nat
+  def test_nat
     skip 'requires root privs' unless Process.euid == 0
     @fw.enable_nat '1.2.3.4'
     check_ruleset @fw, "nat pass on #{@public_iface} inet from 1.2.3.4/32 to any -> #{@public_ip}\n"
-  end
-
-  # Delete a NAT rule for an IP address
-  def test_disable_nat
-    skip 'requires root privs' unless Process.euid == 0
-    @fw.enable_nat '1.2.3.4'
+    assert_match 'from 1.2.3.4', `pfctl -q -s nat -a launchd.nat`
     @fw.disable_nat '1.2.3.4'
     check_ruleset @fw, "\n"
+    refute_match 'from 1.2.3.4', `pfctl -q -s nat -a launchd.nat`
   end
 
-  def test_enable_redirect
+  def test_redirect
     skip 'requires root privs' unless Process.euid == 0
     @fw.enable_redirect(:STREAM, '1.2.3.4', '80')
     check_ruleset @fw, "rdr pass on #{@public_iface} inet proto tcp from any to #{@public_ip} port = 80 -> 1.2.3.4\n"
-  end
-
-  def test_disable_redirect
-    skip 'requires root privs' unless Process.euid == 0
-    @fw.enable_redirect(:STREAM, '1.2.3.4', '80')
+    #system "pfctl -q -s all -a launchd.rdr"
+    assert_match '-> 1.2.3.4', `pfctl -q -s all -a launchd.rdr`
     @fw.disable_redirect(:STREAM, '1.2.3.4', '80')
+    #puts "pf.conf=" ; system "cat /var/run/launchd/pf.conf"
     check_ruleset @fw, "\n"
+    refute_match '-> 1.2.3.4', `pfctl -q -s all -a launchd.rdr`
   end
 end

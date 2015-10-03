@@ -48,4 +48,9 @@ class Launch::Firewall::Base
   def disable_redirect(socktype, ip_addr, port)
     raise 'not implemented'
   end
+
+  # Reload the firewall ruleset
+  def reload
+    raise 'not implemented'
+  end
 end

@@ -18,6 +18,8 @@
 class Launch::Firewall::Base
 
   def initialize
+    @logger = Launch::Log.instance.logger
+
     # The presumed public IPv4 address of the current machine 
     @public_ip = Launch::Network.ip_address(Launch::Network::default_interface)
     # The presumed public-facing interface on the current machine 

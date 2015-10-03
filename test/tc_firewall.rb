@@ -53,7 +53,7 @@ class FirewallTest < Minitest::Unit::TestCase
   def test_redirect
     skip 'requires root privs' unless Process.euid == 0
     @fw.enable_redirect(:STREAM, '1.2.3.4', '80')
-    check_ruleset @fw, "rdr pass on #{@public_iface} inet proto tcp from any to #{@public_ip} port = 80 -> 1.2.3.4\n"
+    check_ruleset @fw, "rdr pass inet proto tcp from any to any port = 80 -> 1.2.3.4\n"
     #system "pfctl -q -s all -a launchd.rdr"
     assert_match '-> 1.2.3.4', `pfctl -q -s all -a launchd.rdr`
     @fw.disable_redirect(:STREAM, '1.2.3.4', '80')

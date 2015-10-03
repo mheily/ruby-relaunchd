@@ -124,6 +124,8 @@ class Launch::Container::EzJail < Launch::Container::Base
     system "#{cmd} #{shell_logfile}" # or raise "command failed: #{cmd}"
     raise 'creation failed' unless exists?
 
+    Launch::Firewall.new.enable_nat('127.0.1.1') #XXX-FIXME hardcoded
+
     start
 
     system "cp /etc/resolv.conf /usr/jails/#{name}/etc" or raise "cp failed"

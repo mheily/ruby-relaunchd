@@ -65,10 +65,11 @@ class Launch::Firewall::Pf < Launch::Firewall::Base
     else
       raise ArgumentError
     end
-    "rdr pass on #{@public_iface} inet proto #{proto} from any to #{@public_ip} port = #{port} -> #{ip_addr}"
+    "rdr pass inet proto #{proto} from any to any port = #{port} -> #{ip_addr}"
   end
 
   def reload_ruleset
+    @logger.debug "reloading rules: #{ruleset}"
     outfile = "/var/run/launchd/pf.conf"
     File.open(outfile, "w") { |f| f.write(ruleset) }
     system "pfctl -q -N -a launchd.nat -f #{outfile}" or raise "pfctl-1 failed"

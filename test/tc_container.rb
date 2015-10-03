@@ -145,8 +145,12 @@ class ContainerTest < Minitest::Unit::TestCase
       end
       hostname = `hostname`.chomp
       public_ip_addr = `getent hosts #{hostname} | cut -f1 -d' '`.chomp
-      assert_match 'thttpd', `curl --silent http://#{public_ip_addr}/`
-      assert_match 'thttpd', `curl --silent http://localhost/`
+      assert_match 'thttpd', `curl --silent http://127.0.1.1/`,
+	"curl of FIXME-fake_direct_jail_IP failed"
+      assert_match 'thttpd', `curl --silent http://#{public_ip_addr}/`,
+	"curl of #{public_ip_addr} failed"
+      assert_match 'thttpd', `curl --silent http://localhost/`,
+	"curl of localhost failed"
     rescue
       raise
     ensure

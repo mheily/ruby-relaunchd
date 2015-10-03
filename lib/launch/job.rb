@@ -68,11 +68,15 @@ class Launch::Job
   # Start proxying requests from the main host to a container
   def setup_proxy(socktype, family, port)
     raise 'FIXME - only IPv4 supported' unless family == :INET
-    raise 'FIXME - only TCP supported' unless socktype == :STREAM
-    @proxy = Launch::Proxy.new(socktype: socktype, 
-    		ip_addr: '127.0.1.1', # XXX-FIXME Hardcoded
-    		port: port)
-    @proxy.start
+    Launch::Firewall.new.enable_redirect(socktype, 
+	'127.0.1.1', #XXX-FIXME hardcoded
+	port)
+# DEADWOOD: replaced by firewall
+#    raise 'FIXME - only TCP supported' unless socktype == :STREAM
+#    @proxy = Launch::Proxy.new(socktype: socktype, 
+#    		ip_addr: '127.0.1.1', # XXX-FIXME Hardcoded
+#    		port: port)
+#    @proxy.start
     self
   end
 

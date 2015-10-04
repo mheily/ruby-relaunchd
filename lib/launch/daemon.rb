@@ -44,6 +44,7 @@ class Launch::Daemon
           pid = Process.waitpid -1, Process::WNOHANG
           if pid.nil?
             @logger.debug "spurious wakeup?"
+      	    $GOT_SIGCHLD = false   #XXX-RACE CONDITION, racing with signal handler
             next
           end
           @logger.debug "pid #{pid} died with status #{$?.inspect}"

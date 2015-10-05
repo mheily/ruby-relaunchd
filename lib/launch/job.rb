@@ -15,53 +15,31 @@
 #
 
 class Launch::Job
-  require 'plist'
 
-  attr_reader :plist, :label, :pid, :status, :last_exit_code
+  attr_reader :plist, :pid, :status, :last_exit_code
   attr_reader :sockets
 
   def initialize
-    @label = '--nil--'
     @pid = -1
     @status = :uninitialized # can be: uninitialized, configured, running, stopped
     @last_exit_code = 0			# last exit status from waitpid()
-    @container = {
-	'Enable' => false,
-	'PostCreateCommands' => [],
-	'Packages' => [],
-    }
     @logger = Launch::Log.instance.logger
-    @sockets = []
+    @plist = nil
+    @sockets = {}
     @active_sockets = []
   end
 
-  # Load a job that has been pre-parsed into a Ruby hash
-  def load(obj)
-    raise ArgumentError unless obj.kind_of? Hash
-    @logger.debug "loading job: #{obj.inspect}"
-    @plist = obj
-    @label = @plist['Label']
-    if @plist.has_key? 'Container'
-       @container = @plist['Container']
-
-       # KLUDGE - This allows easy access from ::Container but causes some
-       # duplication and potential confusion
-       @container['Packages'] = @plist['Packages'] if @plist.has_key? 'Packages'
-    else
-      @container = {
-	'Enable' => false,
-	'PostCreateCommands' => [],
-	'Packages' => [],
-      }
-    end
-    @status = :configured
+  # Load a job from a pre-parsed Hash
+  def load(hash)
+    raise ArgumentError unless hash.kind_of? Hash
+    @plist = Launch::Manifest.new.load(hash)
     self
   end
 
   # Load a job by parsing a plist file
   def load_file(path)
-    raise ArgumentError unless obj.kind_of? String
-    load(Plist::parse_xml(plist))
+    raise ArgumentError unless path.kind_of? String
+    @plist = Launch::Manifest.new.load_file(path)
     self
   end
 
@@ -87,11 +65,15 @@ class Launch::Job
   end
 
   def setup_sockets
-    # TODO: handle an array of sockets
-    ent = @plist['Sockets']['Listeners']
-    port = Socket.getservbyname(ent['SockServiceName'])
+    @plist.sockets.each do |name, ent|
+      setup_socket(name, ent)
+    end
+  end
+
+  def setup_socket(name, ent)
+    port = Socket.getservbyname(ent.sock_service_name)
     raise 'invalid SockServiceName' unless port.kind_of? Integer
-    family = case ent['SockFamily']
+    family = case ent.sock_family
     when 'IPv4'
       :INET
     when 'IPv6'
@@ -101,7 +83,7 @@ class Launch::Job
     else
       raise ArgumentError, 'invalid SockFamily'
     end
-    socktype = case ent['SockType']
+    socktype = case ent.sock_type
     when 'dgram'
       :DGRAM
     when 'stream'
@@ -119,7 +101,7 @@ class Launch::Job
     socket.setsockopt(:SOCKET, :REUSEADDR, true)
     socket.bind(Addrinfo.tcp("0.0.0.0", port))
     socket.listen(5)
-    @sockets << socket
+    @sockets[name] = socket
     @logger.debug "created socket: port=#{port} family=#{family} socktype=#{socktype}"
     @status = :bound
     self
@@ -136,21 +118,21 @@ class Launch::Job
 
   def start
     if container?
-      ctr = Launch::Container.new label, @container
+      ctr = Launch::Container.new @plist.label, @plist.container
     else
-      ctr = Launch::Container::Null.new label, @container
+      ctr = Launch::Container::Null.new @plist.label, @plist.container
     end
     ctr.create unless ctr.exists?
 
-    if @plist.has_key?('Sockets') and @status == :configured
+    if @plist.sockets.length > 0 and @status == :configured
       setup_sockets 
       return unless container?
     end
 
     raise 'already started' if @status == :running
  
-    args = plist['ProgramArguments']
-    @logger.debug "starting job: #{@label} command=#{args.inspect}"
+    args = @plist.program_arguments
+    @logger.debug "starting job: #{@plist.label} command=#{args.inspect}"
     @pid = ctr.spawn(args)
     @status = :running
     @logger.debug "child PID #{@pid} now running"
@@ -174,7 +156,7 @@ class Launch::Job
   end
 
   def reap(status)
-    @logger.debug "reaped job #{@label} matching pid #{@pid}"
+    @logger.debug "reaped job #{@plist.label} matching pid #{@pid}"
     @status = :stopped
     @last_exit_code = status.exitstatus  # FIXME: is nil when SIGTERM 
     @pid = nil
@@ -184,6 +166,6 @@ class Launch::Job
   private
 
   def container?
-    @container['Enable'] == true
+    @plist.container.enable == true
   end
 end

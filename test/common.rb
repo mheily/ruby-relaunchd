@@ -21,6 +21,10 @@ module Common
     `ruby -I#{@libdir} #{@bindir}/launchctl.rb #{command}`.chomp
   end
 
+  def fixture(filename)
+    __dir__ + '/fixtures/' + filename
+  end
+
   def start_launchd
     @libdir = __dir__ + '/../lib'
     @bindir = __dir__ + '/../bin'

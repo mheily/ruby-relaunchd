@@ -47,8 +47,6 @@ class Launch::Container::Base
     @name = name
     @logger = Launch::Log.instance.logger
     @plist = plist
-    # Sanity check the plist
-    @plist['PostCreateCommands'] ||= []
   end
 
   protected
@@ -136,14 +134,12 @@ class Launch::Container::EzJail < Launch::Container::Base
     @pkgtool.chroot = chroot
     @pkgtool.jail_id = jail_id
     @pkgtool.setup
-    if @plist.has_key?('Packages')
-      @plist['Packages'].each do |package|
-        @pkgtool.install(package) unless @pkgtool.installed?(package)
-      end
+    @plist.packages.each do |package|
+      @pkgtool.install(package) unless @pkgtool.installed?(package)
     end
 
     # Run the post-create commands
-    @plist['PostCreateCommands'].each do |cmd|
+    @plist.post_create_commands.each do |cmd|
       cmd.gsub!('$chroot', chroot)
       @logger.debug "running post-create command: #{cmd}"
       system cmd

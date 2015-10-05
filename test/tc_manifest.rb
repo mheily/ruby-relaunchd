@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #
 # Copyright (c) 2015 Mark Heily <mark@heily.com>
 #
@@ -14,25 +15,15 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-# Things shared by launchd and launchctl
-class Launch
-  require 'pp'
-  require 'plist'
-  require 'singleton'
-  require 'socket'
-  require 'yaml'
+require "minitest/autorun"
 
-  require_relative 'launch/config'
-  require_relative 'launch/container'
-  require_relative 'launch/context'
-  require_relative 'launch/control'
-  require_relative 'launch/daemon'
-  require_relative 'launch/firewall'
-  require_relative 'launch/job'
-  require_relative 'launch/log'
-  require_relative 'launch/manifest'
-  require_relative 'launch/network'
-  require_relative 'launch/package_manager'
-  require_relative 'launch/proxy'
-  require_relative 'launch/state_table'
+# Tests for functionality in Launch::Manifest
+class ManifestTest < Minitest::Unit::TestCase
+  require_relative 'common'
+  include ::Common
+
+  def test_load
+    plist = Launch::Manifest.new.load_file(fixture('com.example.hello_world.plist'))
+    assert_equal 'com.example.hello_world', plist.label
+  end
 end

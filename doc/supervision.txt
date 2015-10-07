@@ -1,0 +1,11 @@
+Random notes about supervision options:
+
+ * runit
+   http://smarden.org/runit/benefits.html
+
+ * daemontools 
+   http://cr.yp.to/daemontools.html
+
+ * s6
+   http://www.skarnet.org/software/s6/
+

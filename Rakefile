@@ -16,6 +16,10 @@
 
 require 'rake/testtask'
 
+task :default do
+  sh 'erb -T 2 man/launchd.plist.5.erb > man/launchd.plist.5'
+end
+
 Rake::TestTask.new do |t|
   t.libs << "lib"
   t.test_files = FileList['test/tc_*.rb']
@@ -31,6 +35,8 @@ task :install do
   sbindir='/usr/local/sbin'
   mandir='/usr/local/man'
 
+  sh 'rake' # to build manpages
+  
   FileUtils.cp 'bin/launchd.rb', "#{sbindir}/launchd"
   FileUtils.cp 'bin/launchctl.rb', "#{bindir}/launchctl"
   system "rm -rf #{pkglibdir}/../launchd" if Dir.exist? pkglibdir 

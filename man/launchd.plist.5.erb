@@ -1,3 +1,6 @@
+<%
+  have_LimitLoad = false
+%>
 .\"
 .\" Copyright (c) 2015 Mark Heily <mark@heily.com>
 .\" Copyright (c) 2005 Apple Computer, Inc. All rights reserved.
@@ -150,6 +153,7 @@ This flag corresponds to the "wait" or "nowait" option of inetd. If true, then t
 .Xr accept 2
 is called on behalf of the job, and the result is passed via the standard in/out/error descriptors.
 .El
+<% if have_LimitLoad %>
 .It Sy LimitLoadToHosts <array of strings>
 This configuration file only applies to the hosts listed with this key. Note: One should set kern.hostname in
 .Xr sysctl.conf 5
@@ -162,6 +166,7 @@ for this feature to work reliably.
 This configuration file only applies to sessions of the type specified. This key is used
 in concert with the -S flag to
 .Nm launchctl .
+<% end %>
 .It Sy Program <string>
 This key maps to the first argument of
 .Xr execvp 3 .
@@ -179,6 +184,7 @@ This flag causes
 to use the
 .Xr glob 3
 mechanism to update the program arguments before invocation.
+<% if false %>
 .It Sy EnableTransactions <boolean>
 This flag instructs
 .Nm launchd
@@ -192,6 +198,7 @@ is free to send the SIGKILL signal.
 .It Sy OnDemand <boolean>
 This key was used in Mac OS X 10.4 to control whether a job was kept alive or not. The default was true.
 This key has been deprecated and replaced in Mac OS X 10.5 and later with the more powerful KeepAlive option.
+<% end %>
 .It Sy KeepAlive <boolean or dictionary of stuff>
 This optional key is used to control whether your job is to be kept
 continuously running or to let demand and conditions control the invocation. The
@@ -381,6 +388,7 @@ This optional key specifies whether the kernel should consider this daemon to be
 This optional key specifies whether the job can only be run once and only once.
 In other words, if the job cannot be safely respawned without a full machine
 reboot, then set this key to be true.
+<% if false %>
 .It Sy MachServices <dictionary of booleans or a dictionary of dictionaries>
 This optional key is used to specify Mach services to be registered with the
 Mach bootstrap sub-system.  Each key in this dictionary should be the name of
@@ -402,6 +410,7 @@ Reserve the name in the namespace, but cause bootstrap_look_up() to fail until t
 .Pp
 Finally, for the job itself, the values will be replaced with Mach ports at the time of check-in with
 .Nm launchd .
+<% end %>
 .It Sy Sockets <dictionary of dictionaries... OR dictionary of array of dictionaries...>
 This optional key is used to specify launch on demand sockets that can be used to let
 .Nm launchd

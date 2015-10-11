@@ -1,6 +1,6 @@
 On FreeBSD:
 
-  sudo pkg install rubygem-plist rubygem-rake rubygem-virtus
+  sudo pkg install rubygem-plist rubygem-rake rubygem-virtus daemontools
   sudo rake install
 
   edit /etc/pf.conf and add two anchors in the appropriate sections:
@@ -8,3 +8,7 @@ On FreeBSD:
     nat-anchor launchd.nat
     rdr-anchor launchd.rdr
 
+
+On Debian or related systems like Ubuntu:
+
+	sudo apt-get install ruby-plist ruby-virtus

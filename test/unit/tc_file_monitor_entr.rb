@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #
 # Copyright (c) 2015 Mark Heily <mark@heily.com>
 #
@@ -14,27 +15,24 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-# Things shared by launchd and launchctl
-class Launch
-  require 'pp'
-  require 'plist'
-  require 'singleton'
-  require 'socket'
-  require 'yaml'
+require "minitest/autorun"
 
-  require_relative 'launch/config'
-  require_relative 'launch/container'
-  require_relative 'launch/context'
-  require_relative 'launch/control'
-  require_relative 'launch/daemon'
-  require_relative 'launch/firewall'
-  require_relative 'launch/file_monitor'
-  require_relative 'launch/job'
-  require_relative 'launch/log'
-  require_relative 'launch/manifest'
-  require_relative 'launch/network'
-  require_relative 'launch/package_manager'
-  require_relative 'launch/proxy'
-  require_relative 'launch/state_table'
-  require_relative 'launch/supervisor'
+# Tests for functionality in Launch::FileMonitor::Entr
+class EntrTest < Minitest::Unit::TestCase
+  require_relative '../common'
+  include ::Common
+
+  def setup
+    @entr_path ||= `which entr`.chomp
+    @entr = Launch::FileMonitor::Entr.new
+  end
+  
+  def test_files
+    assert_equal "echo /foo | #{@entr_path} 'bar'", @entr.watch_files(['/foo']).execute('bar').command
+  end  
+
+  def test_dirs
+    assert_equal "echo /foo | #{@entr_path} -d 'baz'", 
+      @entr.watch_directories(['/foo']).execute('baz').command
+  end
 end

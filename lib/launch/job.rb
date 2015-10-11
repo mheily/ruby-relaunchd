@@ -130,8 +130,20 @@ class Launch::Job
     end
 
     raise 'already started' if @status == :running
- 
-    args = @plist.program_arguments
+    
+    if @plist.watch_paths.length > 0
+      fm = Launch::FileMonitor.new
+      fm.watch_files(@plist.watch_paths)
+      fm.execute(@plist.program_arguments.join(' '))
+      args = fm.command
+    elsif @plist.queue_directories > 0
+      fm = Launch::FileMonitor.new
+      fm.watch_directories(@plist.queue_directories)
+      fm.execute(@plist.program_arguments.join(' '))
+      args = fm.command
+    else
+      args = @plist.program_arguments
+    end
     @logger.debug "starting job: #{@plist.label} command=#{args.inspect}"
     @pid = ctr.spawn(args)
     @status = :running
